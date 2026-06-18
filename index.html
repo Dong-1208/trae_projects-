@@ -80,11 +80,9 @@ td{color:#303133}
 .search-bar{display:flex;gap:12px;margin-bottom:20px}
 .search-input{flex:1;padding:10px 12px;border:1px solid #dcdfe6;border-radius:4px;font-size:14px}
 .filter-select{padding:10px 12px;border:1px solid #dcdfe6;border-radius:4px;font-size:14px}
-.action-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.table-actions{display:flex;gap:10px}
 .btn-sm{padding:6px 12px;font-size:12px}
 .pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:20px}
-.page-btn{width:36px;height:36px;border:1px solid #dcdfe6;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.page-btn{padding:6px 12px;border:1px solid #dcdfe6;border-radius:4px;cursor:pointer;font-size:14px}
 .page-btn.active{background:#409eff;color:#fff;border-color:#409eff}
 .page-btn:hover:not(.active){background:#f5f7fa}
 .report-page{max-width:1200px;margin:0 auto}
@@ -92,11 +90,6 @@ td{color:#303133}
 .year-select{padding:8px 12px;border:1px solid #dcdfe6;border-radius:4px;font-size:14px}
 .line-chart{width:100%;height:300px;background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
 .line-chart svg{width:100%;height:100%}
-.month-bars{display:flex;justify-content:space-between;align-items:flex-end;height:200px;padding:0 20px}
-.month-bar{flex:1;margin:0 4px;background:#409eff;border-radius:4px 4px 0 0;position:relative}
-.month-bar:hover{background:#66b1ff}
-.month-bar-label{position:absolute;bottom:-25px;left:50%;transform:translateX(-50%);font-size:12px;color:#909399}
-.month-bar-value{position:absolute;top:-28px;left:50%;transform:translateX(-50%);font-size:12px;color:#606266}
 .type-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px}
 .type-stat{background:#fff;border-radius:8px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.1)}
 .type-stat-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -134,14 +127,14 @@ td{color:#303133}
 .modal-body{padding:20px;font-size:14px;color:#606266}
 .modal-footer{padding:16px;border-top:1px solid #ebeef5;display:flex;justify-content:flex-end;gap:12px}
 @media(max-width:768px){
-    .stats{grid-template-columns:repeat(2,1fr)}
-    .charts{grid-template-columns:1fr}
-    .form-row{grid-template-columns:1fr}
-    .budget-cards{grid-template-columns:repeat(2,1fr)}
-    .budget-charts{grid-template-columns:1fr}
-    .type-stats{grid-template-columns:repeat(2,1fr)}
-    .sidebar{width:100%;border-right:none;border-bottom:1px solid #e6e6e6}
-    .main{flex-direction:column}
+.stats{grid-template-columns:repeat(2,1fr)}
+.charts{grid-template-columns:1fr}
+.form-row{grid-template-columns:1fr}
+.budget-cards{grid-template-columns:repeat(2,1fr)}
+.budget-charts{grid-template-columns:1fr}
+.type-stats{grid-template-columns:repeat(2,1fr)}
+.sidebar{width:100%;border-right:none;border-bottom:1px solid #e6e6e6}
+.main{flex-direction:column}
 }
 </style>
 </head>
@@ -157,12 +150,12 @@ td{color:#303133}
     </div>
 </header>
 <div class="main">
-    <aside class="sidebar">
-        <div class="menu active" data-menu="dashboard" onclick="setMenu('dashboard')">📊 数据概览</div>
-        <div class="menu" data-menu="input" onclick="setMenu('input')">📝 数据录入</div>
-        <div class="menu" data-menu="list" onclick="setMenu('list')">📋 记录查询</div>
-        <div class="menu" data-menu="report" onclick="setMenu('report')">📈 统计报表</div>
-        <div class="menu" data-menu="budget" onclick="setMenu('budget')">💰 成本预算</div>
+    <aside class="sidebar" id="sidebar">
+        <div class="menu active" data-menu="dashboard">📊 数据概览</div>
+        <div class="menu" data-menu="input">📝 数据录入</div>
+        <div class="menu" data-menu="list">📋 记录查询</div>
+        <div class="menu" data-menu="report">📈 统计报表</div>
+        <div class="menu" data-menu="budget">💰 成本预算</div>
     </aside>
     <main class="content" id="mainContent"></main>
 </div>
@@ -173,12 +166,13 @@ td{color:#303133}
         <div class="modal-title">确认</div>
         <div class="modal-body" id="confirmMsg">确定要执行此操作吗？</div>
         <div class="modal-footer">
-            <button class="btn btn-default" onclick="closeModal()">取消</button>
-            <button class="btn btn-primary" onclick="doConfirm()">确定</button>
+            <button class="btn btn-default" id="cancelBtn">取消</button>
+            <button class="btn btn-primary" id="confirmBtn">确定</button>
         </div>
     </div>
 </div>
 <script>
+// 数据定义
 var wasteTypes=[
     {name:'生活垃圾',categories:['厨余垃圾','塑料垃圾','纸张垃圾','金属垃圾','玻璃垃圾','其他']},
     {name:'危险废物',categories:['废油漆桶','废电池','废灯管','废溶剂','废化学品','其他']},
@@ -196,6 +190,60 @@ var disposalMethods=['填埋','焚烧','回收利用','专业回收','堆肥','�
 var wasteSources=['办公楼','生产车间','施工工地','仓库','生活区','其他'];
 var colors=['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#9a60b4'];
 var costPerTon={'生活垃圾':120,'危险废物':800,'建筑垃圾':80,'工业废物':350,'医疗废物':500,'农业废物':60,'电子废物':450,'餐饮废物':100,'包装废物':90};
+
+// 示例数据
+var sampleData=[
+    {id:'1',date:'2022-01-10',type:'生活垃圾',category:'厨余垃圾',weight:150.5,unit:'kg',source:'办公楼',disposalMethod:'填埋',remark:'日常办公'},
+    {id:'2',date:'2022-02-15',type:'生活垃圾',category:'塑料垃圾',weight:85.2,unit:'kg',source:'办公楼',disposalMethod:'焚烧',remark:'日常办公'},
+    {id:'3',date:'2022-03-20',type:'危险废物',category:'废电池',weight:12.3,unit:'kg',source:'仓库',disposalMethod:'专业回收',remark:'废旧电池'},
+    {id:'4',date:'2022-04-18',type:'建筑垃圾',category:'废钢筋',weight:280.0,unit:'kg',source:'施工工地',disposalMethod:'回收利用',remark:'建筑拆除'},
+    {id:'5',date:'2022-05-22',type:'工业废物',category:'废渣',weight:450.0,unit:'kg',source:'生产车间',disposalMethod:'填埋',remark:'生产废料'},
+    {id:'6',date:'2022-06-15',type:'生活垃圾',category:'厨余垃圾',weight:180.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'食堂垃圾'},
+    {id:'7',date:'2022-07-08',type:'医疗废物',category:'感染性废物',weight:25.5,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'医疗点'},
+    {id:'8',date:'2022-08-12',type:'危险废物',category:'废油漆桶',weight:35.0,unit:'kg',source:'施工工地',disposalMethod:'专业回收',remark:'油漆作业'},
+    {id:'9',date:'2022-09-25',type:'建筑垃圾',category:'废砖块',weight:520.0,unit:'kg',source:'施工工地',disposalMethod:'填埋',remark:'旧建筑'},
+    {id:'10',date:'2022-10-30',type:'生活垃圾',category:'纸张垃圾',weight:95.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'办公废纸'},
+    {id:'11',date:'2022-11-18',type:'工业废物',category:'废油',weight:120.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'设备维护'},
+    {id:'12',date:'2022-12-05',type:'生活垃圾',category:'玻璃垃圾',weight:45.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'废玻璃'},
+    {id:'13',date:'2023-01-12',type:'生活垃圾',category:'厨余垃圾',weight:165.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'食堂'},
+    {id:'14',date:'2023-02-08',type:'危险废物',category:'废灯管',weight:18.5,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'照明'},
+    {id:'15',date:'2023-03-15',type:'建筑垃圾',category:'废混凝土',weight:680.0,unit:'kg',source:'施工工地',disposalMethod:'回收利用',remark:'混凝土'},
+    {id:'16',date:'2023-04-22',type:'工业废物',category:'废酸',weight:85.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'酸洗'},
+    {id:'17',date:'2023-05-10',type:'生活垃圾',category:'厨余垃圾',weight:145.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'食堂'},
+    {id:'18',date:'2023-06-18',type:'医疗废物',category:'损伤性废物',weight:8.5,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'针头'},
+    {id:'19',date:'2023-07-22',type:'危险废物',category:'废溶剂',weight:45.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'清洗'},
+    {id:'20',date:'2023-08-15',type:'建筑垃圾',category:'废木材',weight:180.0,unit:'kg',source:'施工工地',disposalMethod:'回收利用',remark:'木材'},
+    {id:'21',date:'2023-09-08',type:'生活垃圾',category:'金属垃圾',weight:65.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'废金属'},
+    {id:'22',date:'2023-10-25',type:'工业废物',category:'废碱',weight:75.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'中和'},
+    {id:'23',date:'2023-11-12',type:'生活垃圾',category:'塑料垃圾',weight:95.0,unit:'kg',source:'办公楼',disposalMethod:'焚烧',remark:'塑料'},
+    {id:'24',date:'2023-12-20',type:'危险废物',category:'废化学品',weight:22.0,unit:'kg',source:'仓库',disposalMethod:'专业回收',remark:'过期'},
+    {id:'25',date:'2024-01-15',type:'生活垃圾',category:'厨余垃圾',weight:175.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'食堂'},
+    {id:'26',date:'2024-02-10',type:'建筑垃圾',category:'废塑料',weight:45.0,unit:'kg',source:'施工工地',disposalMethod:'回收利用',remark:'塑料'},
+    {id:'27',date:'2024-03-22',type:'工业废物',category:'废渣',weight:380.0,unit:'kg',source:'生产车间',disposalMethod:'填埋',remark:'废渣'},
+    {id:'28',date:'2024-04-18',type:'医疗废物',category:'感染性废物',weight:32.0,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'医疗'},
+    {id:'29',date:'2024-05-12',type:'危险废物',category:'废电池',weight:15.0,unit:'kg',source:'仓库',disposalMethod:'专业回收',remark:'电池'},
+    {id:'30',date:'2024-06-25',type:'生活垃圾',category:'纸张垃圾',weight:105.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'废纸'},
+    {id:'31',date:'2024-07-18',type:'农业废物',category:'农作物秸秆',weight:280.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'秸秆'},
+    {id:'32',date:'2024-08-22',type:'电子废物',category:'废弃电器',weight:150.0,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'电器'},
+    {id:'33',date:'2024-09-15',type:'餐饮废物',category:'餐厨垃圾',weight:220.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'厨房'},
+    {id:'34',date:'2024-10-28',type:'包装废物',category:'纸箱',weight:85.0,unit:'kg',source:'仓库',disposalMethod:'回收利用',remark:'纸箱'},
+    {id:'35',date:'2024-11-12',type:'生活垃圾',category:'玻璃垃圾',weight:55.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'玻璃'},
+    {id:'36',date:'2024-12-20',type:'工业废物',category:'废催化剂',weight:28.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'催化剂'},
+    {id:'37',date:'2025-01-18',type:'生活垃圾',category:'厨余垃圾',weight:168.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'食堂'},
+    {id:'38',date:'2025-02-12',type:'危险废物',category:'废油漆桶',weight:38.0,unit:'kg',source:'施工工地',disposalMethod:'专业回收',remark:'油漆'},
+    {id:'39',date:'2025-03-25',type:'建筑垃圾',category:'废钢筋',weight:320.0,unit:'kg',source:'施工工地',disposalMethod:'回收利用',remark:'钢筋'},
+    {id:'40',date:'2025-04-15',type:'医疗废物',category:'病理性废物',weight:12.0,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'病理'},
+    {id:'41',date:'2025-05-20',type:'工业废物',category:'废油',weight:135.0,unit:'kg',source:'生产车间',disposalMethod:'专业回收',remark:'废油'},
+    {id:'42',date:'2025-06-18',type:'生活垃圾',category:'塑料垃圾',weight:98.0,unit:'kg',source:'办公楼',disposalMethod:'焚烧',remark:'塑料'},
+    {id:'43',date:'2025-07-22',type:'农业废物',category:'畜禽粪便',weight:450.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'粪便'},
+    {id:'44',date:'2025-08-15',type:'电子废物',category:'废旧电池',weight:25.0,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'电池'},
+    {id:'45',date:'2025-09-28',type:'餐饮废物',category:'食品残渣',weight:185.0,unit:'kg',source:'生活区',disposalMethod:'堆肥',remark:'残渣'},
+    {id:'46',date:'2025-10-12',type:'包装废物',category:'塑料包装',weight:65.0,unit:'kg',source:'仓库',disposalMethod:'回收利用',remark:'塑料'},
+    {id:'47',date:'2025-11-20',type:'生活垃圾',category:'金属垃圾',weight:72.0,unit:'kg',source:'办公楼',disposalMethod:'回收利用',remark:'金属'},
+    {id:'48',date:'2025-12-15',type:'危险废物',category:'废灯管',weight:22.0,unit:'kg',source:'办公楼',disposalMethod:'专业回收',remark:'灯管'}
+];
+
+// 状态变量
 var records=sampleData.slice();
 var currentMenu='dashboard';
 var currentYear=new Date().getFullYear();
@@ -206,14 +254,41 @@ var searchKeyword='';
 var filterType='';
 var currentPage=1;
 var pageSize=10;
-window.onload=function(){
+
+// 初始化
+function init(){
     document.getElementById('currentDate').textContent=new Date().toLocaleDateString('zh-CN');
+    bindMenuEvents();
+    bindModalEvents();
     renderDashboard();
 }
+
+// 绑定菜单点击事件
+function bindMenuEvents(){
+    var menus=document.querySelectorAll('.menu');
+    menus.forEach(function(menu){
+        menu.addEventListener('click',function(){
+            setMenu(this.dataset.menu);
+        });
+    });
+}
+
+// 绑定模态框事件
+function bindModalEvents(){
+    document.getElementById('cancelBtn').addEventListener('click',closeModal);
+    document.getElementById('confirmBtn').addEventListener('click',doConfirm);
+}
+
+// 设置菜单
 function setMenu(m){
     currentMenu=m;
-    document.querySelectorAll('.menu').forEach(function(el){
-        el.classList.toggle('active',el.dataset.menu===m);
+    var menus=document.querySelectorAll('.menu');
+    menus.forEach(function(el){
+        if(el.dataset.menu===m){
+            el.classList.add('active');
+        }else{
+            el.classList.remove('active');
+        }
     });
     if(m==='dashboard')renderDashboard();
     else if(m==='input')renderInput();
@@ -221,23 +296,49 @@ function setMenu(m){
     else if(m==='report')renderReport();
     else if(m==='budget')renderBudget();
 }
-function fmt(w){return w>=1000?(w/1000).toFixed(2)+' 吨':w.toFixed(2)+' kg';}
-function fmtMoney(m){return m>=10000?(m/10000).toFixed(2)+' 万':m.toFixed(2)+' 元';}
+
+// 格式化重量
+function fmt(w){
+    return w>=1000?(w/1000).toFixed(2)+' 吨':w.toFixed(2)+' kg';
+}
+
+// 格式化金额
+function fmtMoney(m){
+    return m>=10000?(m/10000).toFixed(2)+' 万':m.toFixed(2)+' 元';
+}
+
+// 显示提示
 function showToast(msg,type){
     var toast=document.getElementById('toast');
     toast.textContent=msg;
     toast.className='toast';
     if(type)toast.classList.add(type);
     toast.classList.remove('hidden');
-    setTimeout(function(){toast.classList.add('hidden');},2000);
+    setTimeout(function(){
+        toast.classList.add('hidden');
+    },2000);
 }
+
+// 显示确认框
 function showConfirm(msg,fn){
     document.getElementById('confirmMsg').textContent=msg;
     confirmFn=fn;
     document.getElementById('confirmModal').classList.remove('hidden');
 }
-function closeModal(){document.getElementById('confirmModal').classList.add('hidden');confirmFn=null;}
-function doConfirm(){if(confirmFn)confirmFn();closeModal();}
+
+// 关闭模态框
+function closeModal(){
+    document.getElementById('confirmModal').classList.add('hidden');
+    confirmFn=null;
+}
+
+// 确认操作
+function doConfirm(){
+    if(confirmFn)confirmFn();
+    closeModal();
+}
+
+// 渲染数据概览
 function renderDashboard(){
     var total=records.reduce(function(s,r){return s+r.weight},0);
     var typeStats={};
@@ -257,12 +358,12 @@ function renderDashboard(){
     html+='<div class="charts">';
     html+='<div class="chart"><h3 class="chart-title">废物类型分布</h3><div class="pie">';
     sortedTypes.slice(0,5).forEach(function(item,i){
-        html+='<div class="pie-item"><div class="pie-bar" style="width:'+(item[1]/total*100)+'%;background:'+colors[i]+'"></div><span class="pie-label">'+item[0]+'</span><span class="pie-value">'+fmt(item[1])+'</span></div>';
+        html+='<div class="pie-item"><div class="pie-bar" style="width:'+Math.max(item[1]/total*100,5)+'%;background:'+colors[i]+'"></div><span class="pie-label">'+item[0]+'</span><span class="pie-value">'+fmt(item[1])+'</span></div>';
     });
     html+='</div></div>';
     html+='<div class="chart"><h3 class="chart-title">处置方式分布</h3><div class="disposal">';
     Object.entries(disStats).forEach(function(item,i){
-        html+='<div class="disposal-item"><div class="disposal-bar-wrap"><div class="disposal-bar" style="width:'+(item[1]/total*100)+'%;background:'+colors[i%colors.length]+'"></div></div><div class="disposal-info"><span class="disposal-label">'+item[0]+'</span><span class="disposal-value">'+fmt(item[1])+'</span></div></div>';
+        html+='<div class="disposal-item"><div class="disposal-bar-wrap"><div class="disposal-bar" style="width:'+Math.max(item[1]/total*100,5)+'%;background:'+colors[i%colors.length]+'"></div></div><div class="disposal-info"><span class="disposal-label">'+item[0]+'</span><span class="disposal-value">'+fmt(item[1])+'</span></div></div>';
     });
     html+='</div></div></div>';
     html+='<div class="table-wrap"><h3 class="chart-title">最近记录</h3><table><thead><tr><th>日期</th><th>类型</th><th>类别</th><th>重量</th><th>来源</th><th>处置方式</th></tr></thead><tbody>';
@@ -272,6 +373,8 @@ function renderDashboard(){
     html+='</tbody></table></div></div>';
     document.getElementById('mainContent').innerHTML=html;
 }
+
+// 渲染数据录入页面
 function renderInput(){
     var typeOptions='<option value="">请选择废物类型</option>';
     wasteTypes.forEach(function(t){typeOptions+='<option value="'+t.name+'">'+t.name+'</option>';});
@@ -282,25 +385,34 @@ function renderInput(){
     var today=new Date().toISOString().split('T')[0];
     var html='<div class="form-page"><div class="page-header"><h2 class="page-title">固废数据录入</h2><p class="page-desc">请填写固废产生记录的详细信息</p></div>';
     html+='<div class="form"><div class="form-row"><div class="form-group"><label>日期 *</label><input type="date" id="fDate" value="'+today+'"></div>';
-    html+='<div class="form-group"><label>废物类型 *</label><select id="fType" onchange="typeChange()">'+typeOptions+'</select></div></div>';
+    html+='<div class="form-group"><label>废物类型 *</label><select id="fType">'+typeOptions+'</select></div></div>';
     html+='<div class="form-row"><div class="form-group"><label>废物类别 *</label><select id="fCategory"><option value="">请先选择废物类型</option></select></div>';
     html+='<div class="form-group"><label>重量(kg) *</label><input type="number" id="fWeight" placeholder="请输入重量" step="0.1" min="0"></div></div>';
     html+='<div class="form-row"><div class="form-group"><label>来源 *</label><select id="fSource">'+sourceOptions+'</select></div>';
     html+='<div class="form-group"><label>处置方式 *</label><select id="fDisposal">'+disposalOptions+'</select></div></div>';
     html+='<div class="form-row"><div class="form-group"><label>备注</label><input type="text" id="fRemark" placeholder="请输入备注信息"></div><div class="form-group"></div></div>';
-    html+='<div class="form-actions"><button class="btn btn-primary" onclick="doSubmit()">保存记录</button><button class="btn btn-default" onclick="doReset()">重置</button></div></div></div>';
+    html+='<div class="form-actions"><button class="btn btn-primary" id="submitBtn">保存记录</button><button class="btn btn-default" id="resetBtn">重置</button></div></div></div>';
     document.getElementById('mainContent').innerHTML=html;
+    
+    // 绑定事件
+    document.getElementById('fType').addEventListener('change',typeChange);
+    document.getElementById('submitBtn').addEventListener('click',doSubmit);
+    document.getElementById('resetBtn').addEventListener('click',doReset);
 }
+
+// 类型选择变化
 function typeChange(){
     var type=document.getElementById('fType').value;
     var cat=document.getElementById('fCategory');
-    var categories=wasteTypes.find(function(t){return t.name===type});
+    var found=wasteTypes.find(function(t){return t.name===type});
     var options='<option value="">请选择废物类别</option>';
-    if(categories){
-        categories.categories.forEach(function(c){options+='<option value="'+c+'">'+c+'</option>';});
+    if(found){
+        found.categories.forEach(function(c){options+='<option value="'+c+'">'+c+'</option>';});
     }
     cat.innerHTML=options;
 }
+
+// 提交数据
 function doSubmit(){
     var date=document.getElementById('fDate').value;
     var type=document.getElementById('fType').value;
@@ -308,17 +420,22 @@ function doSubmit(){
     var weight=parseFloat(document.getElementById('fWeight').value);
     var source=document.getElementById('fSource').value;
     var disposal=document.getElementById('fDisposal').value;
+    var remark=document.getElementById('fRemark').value;
+    
     if(!date){showToast('请选择日期','error');return;}
     if(!type){showToast('请选择废物类型','error');return;}
     if(!category){showToast('请选择废物类别','error');return;}
     if(!weight||weight<=0){showToast('请输入有效重量','error');return;}
     if(!source){showToast('请选择来源','error');return;}
     if(!disposal){showToast('请选择处置方式','error');return;}
+    
     var id=Date.now().toString();
-    records.unshift({id:id,date:date,type:type,category:category,weight:weight,unit:'kg',source:source,disposalMethod:disposal,remark:document.getElementById('fRemark').value});
-    doReset();
+    records.unshift({id:id,date:date,type:type,category:category,weight:weight,unit:'kg',source:source,disposalMethod:disposal,remark:remark});
     showToast('保存成功','success');
+    doReset();
 }
+
+// 重置表单
 function doReset(){
     document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
     document.getElementById('fType').value='';
@@ -328,78 +445,108 @@ function doReset(){
     document.getElementById('fDisposal').value='';
     document.getElementById('fRemark').value='';
 }
+
+// 渲染记录列表
 function renderList(){
+    searchKeyword='';
+    filterType='';
+    currentPage=1;
     renderListContent();
 }
+
+// 渲染列表内容
 function renderListContent(){
     var filtered=records.filter(function(r){
-        var matchKeyword=!searchKeyword||r.type.includes(searchKeyword)||r.category.includes(searchKeyword)||r.source.includes(searchKeyword)||r.remark.includes(searchKeyword);
+        var matchKeyword=!searchKeyword||r.type.indexOf(searchKeyword)>=0||r.category.indexOf(searchKeyword)>=0||r.source.indexOf(searchKeyword)>=0||(r.remark&&r.remark.indexOf(searchKeyword)>=0);
         var matchType=!filterType||r.type===filterType;
         return matchKeyword&&matchType;
     });
-    var totalPages=Math.ceil(filtered.length/pageSize);
-    currentPage=Math.min(currentPage,totalPages)||1;
+    var totalPages=Math.ceil(filtered.length/pageSize)||1;
+    currentPage=Math.min(currentPage,totalPages);
     var start=(currentPage-1)*pageSize;
     var end=start+pageSize;
     var pageData=filtered.slice(start,end);
+    
     var typeOptions='<option value="">全部类型</option>';
     wasteTypeList.forEach(function(t){typeOptions+='<option value="'+t+'"'+(filterType===t?' selected':'')+'>'+t+'</option>';});
+    
     var html='<div class="list-page">';
     html+='<div class="search-bar">';
-    html+='<input type="text" class="search-input" id="searchInput" placeholder="搜索类型、类别、来源..." value="'+searchKeyword+'" onkeyup="onSearch()">';
-    html+='<select class="filter-select" id="filterSelect" onchange="onFilter()">'+typeOptions+'</select>';
-    html+='<button class="btn btn-primary" onclick="exportCSV()">导出CSV</button>';
+    html+='<input type="text" class="search-input" id="searchInput" placeholder="搜索类型、类别、来源..." value="'+searchKeyword+'">';
+    html+='<select class="filter-select" id="filterSelect">'+typeOptions+'</select>';
+    html+='<button class="btn btn-primary" id="exportBtn">导出CSV</button>';
     html+='</div>';
     html+='<div class="table-wrap"><table><thead><tr><th>日期</th><th>类型</th><th>类别</th><th>重量</th><th>来源</th><th>处置方式</th><th>备注</th><th>操作</th></tr></thead><tbody>';
     pageData.forEach(function(r){
-        html+='<tr><td>'+r.date+'</td><td><span class="type-tag type-tag'+r.type+'">'+r.type+'</span></td><td>'+r.category+'</td><td>'+r.weight+' kg</td><td>'+r.source+'</td><td>'+r.disposalMethod+'</td><td>'+(r.remark||'-')+'</td><td><button class="btn btn-sm btn-default" onclick="doDelete(\''+r.id+'\')">删除</button></td></tr>';
+        html+='<tr><td>'+r.date+'</td><td><span class="type-tag type-tag'+r.type+'">'+r.type+'</span></td><td>'+r.category+'</td><td>'+r.weight+' kg</td><td>'+r.source+'</td><td>'+r.disposalMethod+'</td><td>'+((r.remark&&r.remark.length>0)?r.remark:'-')+'</td><td><button class="btn btn-sm btn-default" data-id="'+r.id+'">删除</button></td></tr>';
     });
     if(pageData.length===0){
         html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#909399">暂无数据</td></tr>';
     }
     html+='</tbody></table></div>';
     html+='<div class="pagination">';
-    html+='<div class="page-btn" onclick="changePage('+(currentPage-1)+')"'+(currentPage<=1?' style="opacity:0.5;cursor:not-allowed"':'')+'>上一页</div>';
+    html+='<button class="page-btn" id="prevPage"'+(currentPage<=1?' disabled':'')+'>上一页</button>';
     for(var i=1;i<=totalPages;i++){
-        html+='<div class="page-btn'+(i===currentPage?' active':'')+'" onclick="changePage('+i+')">'+i+'</div>';
+        html+='<button class="page-btn'+(i===currentPage?' active':'')+'" data-page="'+i+'">'+i+'</button>';
     }
-    html+='<div class="page-btn" onclick="changePage('+(currentPage+1)+')"'+(currentPage>=totalPages?' style="opacity:0.5;cursor:not-allowed"':'')+'>下一页</div>';
+    html+='<button class="page-btn" id="nextPage"'+(currentPage>=totalPages?' disabled':'')+'>下一页</button>';
     html+='</div></div>';
+    
     document.getElementById('mainContent').innerHTML=html;
-}
-function onSearch(){
-    searchKeyword=document.getElementById('searchInput').value;
-    currentPage=1;
-    renderListContent();
-}
-function onFilter(){
-    filterType=document.getElementById('filterSelect').value;
-    currentPage=1;
-    renderListContent();
-}
-function changePage(p){
-    if(p<1)return;
-    var filtered=records.filter(function(r){
-        var matchKeyword=!searchKeyword||r.type.includes(searchKeyword)||r.category.includes(searchKeyword)||r.source.includes(searchKeyword)||r.remark.includes(searchKeyword);
-        var matchType=!filterType||r.type===filterType;
-        return matchKeyword&&matchType;
-    });
-    var totalPages=Math.ceil(filtered.length/pageSize);
-    if(p>totalPages)return;
-    currentPage=p;
-    renderListContent();
-}
-function doDelete(id){
-    showConfirm('确定要删除这条记录吗？',function(){
-        records=records.filter(function(r){return r.id!==id});
-        showToast('删除成功','success');
+    
+    // 绑定事件
+    document.getElementById('searchInput').addEventListener('input',function(){
+        searchKeyword=this.value;
+        currentPage=1;
         renderListContent();
     });
+    document.getElementById('filterSelect').addEventListener('change',function(){
+        filterType=this.value;
+        currentPage=1;
+        renderListContent();
+    });
+    document.getElementById('exportBtn').addEventListener('click',exportCSV);
+    
+    // 删除按钮事件
+    var deleteBtns=document.querySelectorAll('tbody .btn-sm');
+    deleteBtns.forEach(function(btn){
+        btn.addEventListener('click',function(){
+            var id=this.dataset.id;
+            showConfirm('确定要删除这条记录吗？',function(){
+                records=records.filter(function(r){return r.id!==id});
+                showToast('删除成功','success');
+                renderListContent();
+            });
+        });
+    });
+    
+    // 分页事件
+    document.getElementById('prevPage').addEventListener('click',function(){
+        if(currentPage>1){
+            currentPage--;
+            renderListContent();
+        }
+    });
+    document.getElementById('nextPage').addEventListener('click',function(){
+        if(currentPage<totalPages){
+            currentPage++;
+            renderListContent();
+        }
+    });
+    var pageBtns=document.querySelectorAll('.page-btn[data-page]');
+    pageBtns.forEach(function(btn){
+        btn.addEventListener('click',function(){
+            currentPage=parseInt(this.dataset.page);
+            renderListContent();
+        });
+    });
 }
+
+// 导出CSV
 function exportCSV(){
     var header=['日期','废物类型','废物类别','重量(kg)','来源','处置方式','备注'];
     var rows=records.map(function(r){
-        return [r.date,r.type,r.category,r.weight,r.source,r.disposalMethod,r.remark||''].map(function(cell){
+        return [r.date,r.type,r.category,r.weight,r.source,r.disposalMethod,(r.remark||'')].map(function(cell){
             return '"'+cell+'"';
         }).join(',');
     });
@@ -415,6 +562,8 @@ function exportCSV(){
     URL.revokeObjectURL(url);
     showToast('导出成功','success');
 }
+
+// 渲染统计报表
 function renderReport(){
     var yearOptions='';
     for(var y=firstDataYear;y<=currentYear;y++){
@@ -423,8 +572,9 @@ function renderReport(){
     var monthly=getMonthlyData(selectedYear);
     var typeStats=getTypeStats(selectedYear);
     var total=monthly.reduce(function(s,m){return s+m},0);
+    
     var html='<div class="report-page">';
-    html+='<div class="report-header"><h2 class="page-title">统计报表</h2><select class="year-select" id="yearSelect" onchange="onYearChange()">'+yearOptions+'</select></div>';
+    html+='<div class="report-header"><h2 class="page-title">统计报表</h2><select class="year-select" id="yearSelect">'+yearOptions+'</select></div>';
     html+='<div class="stats">';
     html+='<div class="stat"><div class="stat-icon bg-blue">📊</div><div class="stat-info"><div class="stat-value">'+fmt(total)+'</div><div class="stat-label">年度总量</div></div></div>';
     html+='<div class="stat"><div class="stat-icon bg-green">📈</div><div class="stat-info"><div class="stat-value">'+(total/12).toFixed(2)+' kg</div><div class="stat-label">月均量</div></div></div>';
@@ -436,25 +586,38 @@ function renderReport(){
     html+='</div></div>';
     html+='<div class="type-stats">';
     Object.entries(typeStats).forEach(function(item){
-        html+='<div class="type-stat"><div class="type-stat-header"><div class="type-stat-color" style="background:'+(typeColors[item[0]]||'#409eff')+'"></div><span class="type-stat-name">'+item[0]+'</span></div><div class="type-stat-value">'+fmt(item[1])+'</div><div class="type-stat-label">占比</div><div class="type-stat-percent">'+((item[1]/total*100).toFixed(1))+'%</div></div>';
+        var percent=total>0?(item[1]/total*100).toFixed(1):0;
+        html+='<div class="type-stat"><div class="type-stat-header"><div class="type-stat-color" style="background:'+(typeColors[item[0]]||'#409eff')+'"></div><span class="type-stat-name">'+item[0]+'</span></div><div class="type-stat-value">'+fmt(item[1])+'</div><div class="type-stat-label">占比</div><div class="type-stat-percent">'+percent+'%</div></div>';
     });
     html+='</div></div>';
+    
     document.getElementById('mainContent').innerHTML=html;
+    
+    // 绑定年份选择事件
+    document.getElementById('yearSelect').addEventListener('change',function(){
+        selectedYear=parseInt(this.value);
+        renderReport();
+    });
 }
+
+// 获取月度数据
 function getMonthlyData(year){
-    var monthly=new Array(12).fill(0);
+    var monthly=[0,0,0,0,0,0,0,0,0,0,0,0];
     records.forEach(function(r){
-        if(r.date.startsWith(year+'')){
-            var month=parseInt(r.date.split('-')[1])-1;
+        if(r.date.indexOf(year+'-')===0){
+            var parts=r.date.split('-');
+            var month=parseInt(parts[1])-1;
             if(month>=0&&month<12)monthly[month]+=r.weight;
         }
     });
     return monthly;
 }
+
+// 获取类型统计
 function getTypeStats(year){
     var stats={};
     records.forEach(function(r){
-        if(r.date.startsWith(year+'')){
+        if(r.date.indexOf(year+'-')===0){
             stats[r.type]=(stats[r.type]||0)+r.weight;
         }
     });
@@ -463,13 +626,11 @@ function getTypeStats(year){
     sorted.forEach(function(item){result[item[0]]=item[1]});
     return result;
 }
-function onYearChange(){
-    selectedYear=parseInt(document.getElementById('yearSelect').value);
-    renderReport();
-}
+
+// 绘制折线图
 function drawLineChart(data){
     var months=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-    var maxVal=Math.max(...data,1);
+    var maxVal=Math.max.apply(null,data)||1;
     var chartWidth=600;
     var chartHeight=220;
     var padding=40;
@@ -477,48 +638,73 @@ function drawLineChart(data){
     var height=chartHeight-padding*2;
     var stepX=width/11;
     var stepY=height/maxVal;
+    
     var points=data.map(function(v,i){
         return {x:padding+i*stepX,y:chartHeight-padding-v*stepY};
     });
+    
     var pathD='M '+points[0].x+' '+points[0].y;
     points.forEach(function(p){pathD+=' L '+p.x+' '+p.y});
-    var areaD=pathD+' L '+points[points.length-1].x+' '+(chartHeight-padding)+' L '+points[0].x+' '+(chartHeight-padding)+' Z';
+    
+    var areaD=pathD+' L '+points[points.length-1].x+' '+Math.max(chartHeight-padding,0)+' L '+points[0].x+' '+Math.max(chartHeight-padding,0)+' Z';
+    
     var html='<svg viewBox="0 0 '+chartWidth+' '+chartHeight+'">';
+    
+    // 网格线
     for(var i=0;i<=5;i++){
         var y=padding+i*(height/5);
+        y=Math.max(y,0);
+        y=Math.min(y,chartHeight);
         html+='<line x1="'+padding+'" y1="'+y+'" x2="'+(chartWidth-padding)+'" y2="'+y+'" stroke="#ebeef5" stroke-width="1"/>';
-        html+='<text x="'+(padding-8)+'" y="'+(y+4)+'" font-size="10" fill="#909399" text-anchor="end">'+(maxVal-(maxVal/5*i)).toFixed(0)+'</text>';
+        var labelVal=maxVal-(maxVal/5*i);
+        html+='<text x="'+(padding-8)+'" y="'+(y+4)+'" font-size="10" fill="#909399" text-anchor="end">'+labelVal.toFixed(0)+'</text>';
     }
+    
+    // X轴标签
     points.forEach(function(p,i){
-        html+='<line x1="'+p.x+'" y1="'+(chartHeight-padding)+'" x2="'+p.x+'" y2="'+(chartHeight-padding+5)+'" stroke="#ebeef5" stroke-width="1"/>';
+        html+='<line x1="'+p.x+'" y1="'+Math.max(chartHeight-padding,0)+'" x2="'+p.x+'" y2="'+Math.min(chartHeight-padding+5,chartHeight)+'" stroke="#ebeef5" stroke-width="1"/>';
         html+='<text x="'+p.x+'" y="'+(chartHeight-10)+'" font-size="10" fill="#909399" text-anchor="middle">'+months[i]+'</text>';
     });
-    html+='<path d="'+areaD+'" fill="url(#gradient)" opacity="0.3"/>';
+    
+    // 渐变填充
     html+='<defs><linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#409eff"/><stop offset="100%" stop-color="#fff"/></linearGradient></defs>';
+    html+='<path d="'+areaD+'" fill="url(#gradient)" opacity="0.3"/>';
+    
+    // 折线
     html+='<path d="'+pathD+'" fill="none" stroke="#409eff" stroke-width="2"/>';
+    
+    // 数据点
     points.forEach(function(p){
-        html+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="#fff" stroke="#409eff" stroke-width="2"/>';
+        html+='<circle cx="'+p.x+'" cy="'+Math.max(p.y,0)+'" r="4" fill="#fff" stroke="#409eff" stroke-width="2"/>';
     });
+    
     html+='</svg>';
     return html;
 }
+
+// 渲染成本预算页面
 function renderBudget(){
     var currentYearData=getMonthlyData(currentYear-1);
     var lastYearData=getMonthlyData(currentYear-2);
     var currentYearTotal=currentYearData.reduce(function(s,m){return s+m},0);
     var lastYearTotal=lastYearData.reduce(function(s,m){return s+m},0);
-    var emissionTarget=lastYearTotal*0.9;
+    
     var emissionReduction=lastYearTotal-currentYearTotal;
     var emissionRate=lastYearTotal>0?(emissionReduction/lastYearTotal*100).toFixed(1):0;
+    
     var costEstimate=calculateCost(currentYear-1);
     var lastYearCost=calculateCost(currentYear-2);
     var costReduction=lastYearCost-costEstimate;
     var costReductionRate=lastYearCost>0?(costReduction/lastYearCost*100).toFixed(1):0;
+    
     var disposalBudget=300000;
     var budgetUsageRate=(costEstimate/disposalBudget*100).toFixed(1);
+    
     var typeCostStats=calculateTypeCost(currentYear-1);
-    var emissionProgress=Math.min((emissionReduction/(lastYearTotal-emissionTarget)*100),100).toFixed(0);
-    var costProgress=Math.min((costReduction/50000*100),100).toFixed(0);
+    
+    var emissionProgress=Math.min(Math.max((emissionReduction/(lastYearTotal*0.1))*100,0),100).toFixed(0);
+    var costProgress=Math.min(Math.max((costReduction/50000)*100,0),100).toFixed(0);
+    
     var html='<div class="budget-page">';
     html+='<div class="page-header"><h2 class="page-title">成本预算管理</h2><p class="page-desc">减排量预算、预估成本及成本减少分析</p></div>';
     html+='<div class="budget-cards">';
@@ -536,30 +722,35 @@ function renderBudget(){
     html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">';
     html+='<div><div class="analysis-title">累计成本节约</div><div class="analysis-value">¥'+fmtMoney(costReduction)+'</div></div>';
     html+='<div><div class="analysis-title">累计减排量</div><div class="analysis-value">'+fmt(emissionReduction)+'</div></div>';
-    html+='<div><div class="analysis-title">单位减排成本</div><div class="analysis-value">¥'+(emissionReduction>0?(costReduction/(emissionReduction/1000)).toFixed(2):0)+'/吨</div></div>';
+    html+='<div><div class="analysis-title">单位减排成本</div><div class="analysis-value">¥'+(emissionReduction>0?(costReduction/(emissionReduction/1000)).toFixed(2):'0')+'/吨</div></div>';
     html+='</div></div>';
     html+='</div>';
     html+='<div class="table-wrap"><h3 class="chart-title">废物类型成本核算</h3><table><thead><tr><th>废物类型</th><th>处理量</th><th>单位成本(元/吨)</th><th>预估成本</th><th>占比</th></tr></thead><tbody>';
     Object.entries(typeCostStats).forEach(function(item){
-        var percent=(item[1].cost/costEstimate*100).toFixed(1);
-        html+='<tr><td><span class="type-tag type-tag'+item[0]+'">'+item[0]+'</span></td><td>'+fmt(item[1].weight)+'</td><td>¥'+costPerTon[item[0]]+'</td><td>¥'+item[1].cost.toFixed(2)+'</td><td>'+percent+'%</td></tr>';
+        var percent=costEstimate>0?(item[1].cost/costEstimate*100).toFixed(1):0;
+        html+='<tr><td><span class="type-tag type-tag'+item[0]+'">'+item[0]+'</span></td><td>'+fmt(item[1].weight)+'</td><td>¥'+(costPerTon[item[0]]||100)+'</td><td>¥'+item[1].cost.toFixed(2)+'</td><td>'+percent+'%</td></tr>';
     });
     html+='</tbody></table></div></div>';
+    
     document.getElementById('mainContent').innerHTML=html;
 }
+
+// 计算成本
 function calculateCost(year){
     var total=0;
     records.forEach(function(r){
-        if(r.date.startsWith(year+'')){
+        if(r.date.indexOf(year+'-')===0){
             total+=r.weight/1000*(costPerTon[r.type]||100);
         }
     });
     return total;
 }
+
+// 计算类型成本
 function calculateTypeCost(year){
     var stats={};
     records.forEach(function(r){
-        if(r.date.startsWith(year+'')){
+        if(r.date.indexOf(year+'-')===0){
             if(!stats[r.type])stats[r.type]={weight:0,cost:0};
             stats[r.type].weight+=r.weight;
             stats[r.type].cost+=r.weight/1000*(costPerTon[r.type]||100);
@@ -570,6 +761,9 @@ function calculateTypeCost(year){
     sorted.forEach(function(item){result[item[0]]=item[1]});
     return result;
 }
+
+// 页面加载完成后初始化
+window.onload=init;
 </script>
 </body>
 </html>
